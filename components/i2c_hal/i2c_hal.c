@@ -77,10 +77,51 @@ bool i2c_hal_write_reg( uint8_t device_addr , uint8_t register_addr , uint8_t va
 
            }
         
-
-        
         return true ;
 
-        
-
     }   
+
+
+
+    bool i2c_hal_read_reg ( uint8_t device_addr , uint8_t register_addr , uint8_t *value)
+    {
+
+        i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+
+        if (cmd == NULL ){
+
+            return false ;
+
+        }
+
+        i2c_master_start(cmd);
+
+        i2c_master_write_byte(cmd, (device_addr<<1) | I2C_MASTER_WRITE , true);
+        i2c_master_write_byte(cmd , register_addr , true );
+
+
+        i2c_master_start(cmd);
+        i2c_master_write_byte(cmd , (device_addr << 1) | I2C_MASTER_READ , true );
+        i2c_master_read_byte(cmd , value , I2C_MASTER_NACK );
+        
+        i2c_master_stop(cmd);
+
+        esp_err_t err = i2c_master_cmd_begin(
+            I2C_NUM_0 ,
+            cmd, 
+            pdMS_TO_TICKS(1000)
+        );
+
+        if (err != ESP_OK){
+
+            i2c_cmd_link_delete(cmd);
+            return false;
+
+        }
+
+        i2c_cmd_link_delete(cmd);
+
+        return true ; 
+
+
+    }
